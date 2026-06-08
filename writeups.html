@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<!--
+  writeups.html — Searchable writeups listing page
+  ──────────────────────────────────────────────────
+  TO ADD A NEW WRITEUP CARD:
+    1. Copy one of the <article class="card"> blocks below
+    2. Update data-title, data-tags, href, title text, description, tags, date
+    3. data-tags must be space-separated lowercase slugs matching filter-btn data-filter values
+    4. Save. No JS changes needed — writeups.js reads data attributes automatically.
+
+  TO ADD A NEW FILTER CATEGORY:
+    1. Add <button class="filter-btn" data-filter="yourcat">Label</button> to .filter-bar
+    2. Add <span class="tag tag--yourcat">yourcat</span> to style.css .tag variants
+    3. Use "yourcat" in data-tags on relevant cards
+-->
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Writeups — akshayb72</title>
+  <meta name="description" content="CTF writeups and security research by akshayb72.">
+
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/writeups.css">
+</head>
+<body>
+
+  <!-- NAV — identical on every page -->
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="index.html" class="nav-logo">akshayb72</a>
+      <div class="nav-links">
+        <a href="index.html">Home</a>
+        <a href="writeups.html">Writeups</a>
+        <button id="theme-toggle" aria-label="Toggle theme">◑</button>
+      </div>
+    </div>
+  </nav>
+
+
+  <main class="page-body">
+    <div class="layout-wide">
+
+      <!-- PAGE HEADER -->
+      <header class="page-header">
+        <h1>Writeups</h1>
+        <p>CTF challenges, reverse engineering, and security research notes.</p>
+      </header>
+
+
+      <!-- ── SEARCH BAR ──────────────────────────
+           #search-input is watched by writeups.js.
+           Filters cards by title + description text.
+      ─────────────────────────────────────────── -->
+      <div class="search-wrap">
+        <input
+          type="search"
+          id="search-input"
+          placeholder="Search writeups..."
+          autocomplete="off"
+          spellcheck="false"
+          aria-label="Search writeups"
+        >
+      </div>
+
+
+      <!-- ── FILTER BUTTONS ─────────────────────
+           data-filter value must match a word used
+           in the card's data-tags attribute.
+           "all" is special — shows everything.
+      ─────────────────────────────────────────── -->
+      <div class="filter-bar" role="group" aria-label="Filter by category">
+        <button class="filter-btn active" data-filter="all">All</button>
+        <button class="filter-btn" data-filter="rev">Reversing</button>
+        <button class="filter-btn" data-filter="web">Web</button>
+        <button class="filter-btn" data-filter="pwn">Pwn</button>
+        <button class="filter-btn" data-filter="misc">Misc</button>
+        <button class="filter-btn" data-filter="htb">HTB</button>
+        <!-- Add more filter buttons here as needed -->
+      </div>
+
+
+      <!-- Result count — updated live by writeups.js -->
+      <span id="result-count"></span>
+
+
+      <!-- ── WRITEUP CARDS GRID ─────────────────
+           Each article.card represents one writeup.
+
+           REQUIRED ATTRIBUTES on <article>:
+             data-title  — used by search (should match visible title)
+             data-tags   — space-separated filter keys (lowercase)
+
+           CARD STRUCTURE:
+             .card-title  → <a> link to the writeup page
+             .card-desc   → 1–2 sentence summary (truncated by CSS)
+             .card-tags   → tag badges
+             .card-date   → publication date
+      ─────────────────────────────────────────── -->
+      <div class="cards-grid" id="cards-grid">
+
+        <!-- ── CARD: SpookyPass ── -->
+        <article
+          class="card"
+          data-title="SpookyPass"
+          data-tags="rev htb easy"
+        >
+          <a href="writeups/spookypass.html" class="card-title">SpookyPass</a>
+          <p class="card-desc">
+            Classic crackme binary. Recovering a hardcoded password using the
+            <code>strings</code> command — no disassembler required.
+          </p>
+          <div class="card-tags">
+            <span class="tag tag--htb">HTB</span>
+            <span class="tag tag--rev">Rev</span>
+            <span class="tag">Easy</span>
+          </div>
+          <span class="card-date">Jun 2025</span>
+        </article>
+
+        <!--
+          ↓ COPY THIS BLOCK TO ADD A NEW WRITEUP ↓
+          Replace all values in CAPS with real data.
+
+        <article
+          class="card"
+          data-title="CHALLENGE NAME"
+          data-tags="CATEGORY1 CATEGORY2 htb"
+        >
+          <a href="writeups/FILENAME.html" class="card-title">CHALLENGE NAME</a>
+          <p class="card-desc">
+            SHORT DESCRIPTION — what the challenge was about, what technique solved it.
+          </p>
+          <div class="card-tags">
+            <span class="tag tag--htb">HTB</span>
+            <span class="tag tag--rev">Rev</span>
+          </div>
+          <span class="card-date">Mon YYYY</span>
+        </article>
+        -->
+
+      </div><!-- /cards-grid -->
+
+
+      <!-- Empty state — shown by writeups.js when no results match -->
+      <div id="no-results">No writeups match your search.</div>
+
+    </div><!-- /layout-wide -->
+  </main>
+
+
+  <!-- FOOTER — identical on every page -->
+  <footer class="footer">
+    <div class="footer-inner">
+      <span>akshayb72.github.io</span>
+      <span>reverse engineering · ctf writeups</span>
+    </div>
+  </footer>
+
+
+  <!-- main.js first (theme + nav), then page-specific writeups.js -->
+  <script src="js/main.js"></script>
+  <script src="js/writeups.js"></script>
+</body>
+</html>
