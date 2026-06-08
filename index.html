@@ -1,105 +1,172 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="light">
 <!--
-  writeups.html — Auto-enumerating writeups listing page
-  ────────────────────────────────────────────────────────
-  HOW TO ADD A NEW WRITEUP:
-    1. Create your writeup HTML file in the writeups/ folder
-    2. Open writeups/index.json
-    3. Add one object to the array:
-         {
-           "title":       "Challenge Name",
-           "file":        "challenge-name.html",
-           "description": "One or two sentence summary.",
-           "tags":        ["rev", "htb", "easy"],
-           "date":        "Jun 2025"
-         }
-    4. Save. That's it — the card appears automatically.
+  index.html — Landing / profile page
+  ─────────────────────────────────────
+  To customise this page:
+    1. Replace "akshayb72" with your username in nav, hero, footer
+    2. Edit the About text in <section class="about">
+    3. Add/remove tools in <div class="tools-grid">
+    4. Add recent writeups in <section class="latest-writeups">
+    5. Update social links at the bottom
 
-  You never need to touch this HTML file when adding writeups.
-  All card generation is handled by writeups.js reading index.json.
-
-  TO ADD A NEW TAG FILTER:
-    1. Add a <button class="filter-btn" data-filter="yourcat"> below
-    2. Add .tag--yourcat to css/style.css
-    3. Use "yourcat" in the tags array in index.json
+  Files used by this page:
+    css/style.css   → shared variables, nav, footer, typography
+    css/index.css   → landing-page-specific styles
+    js/main.js      → theme toggle, nav highlighting, animations
 -->
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Writeups — akshayb72</title>
-  <meta name="description" content="CTF writeups and security research by akshayb72.">
+  <title>akshayb72 — Security Researcher</title>
+  <meta name="description" content="akshayb72 — Reverse engineering, CTF writeups, and security research.">
+
+  <!-- Shared stylesheet first, then page-specific -->
   <link rel="stylesheet" href="css/style.css">
-  <link rel="stylesheet" href="css/writeups.css">
+  <link rel="stylesheet" href="css/index.css">
 </head>
 <body>
 
-  <!-- NAV -->
+  <!-- ══════════════════════════════════════
+       NAV BAR
+       Defined once here; copy exactly to every page.
+       active class is set by main.js automatically.
+  ═══════════════════════════════════════════ -->
   <nav class="nav">
     <div class="nav-inner">
+      <!-- Logo / home link -->
       <a href="index.html" class="nav-logo">akshayb72</a>
+
       <div class="nav-links">
         <a href="index.html">Home</a>
         <a href="writeups.html">Writeups</a>
+        <!-- Add more links here as needed -->
+        <!-- <a href="tools.html">Tools</a> -->
+
+        <!--
+          Theme toggle button.
+          Icon is set by applyTheme() in main.js.
+          aria-label is also updated by JS.
+        -->
         <button id="theme-toggle" aria-label="Toggle theme">◑</button>
       </div>
     </div>
   </nav>
 
+
+  <!-- ══════════════════════════════════════
+       PAGE CONTENT
+  ═══════════════════════════════════════════ -->
   <main class="page-body">
-    <div class="layout-wide">
+    <div class="layout">
 
-      <header class="page-header">
-        <h1>Writeups</h1>
-        <p>CTF challenges, reverse engineering, and security research notes.</p>
-      </header>
 
-      <!-- Search bar -->
-      <div class="search-wrap">
-        <input
-          type="search"
-          id="search-input"
-          placeholder="Search writeups..."
-          autocomplete="off"
-          spellcheck="false"
-          aria-label="Search writeups"
-        >
-      </div>
+      <!-- ── HERO ─────────────────────────── -->
+      <section class="hero">
+        <!-- Filesystem-style breadcrumb — purely aesthetic -->
+        <div class="hero-path">~/akshayb72</div>
 
-      <!-- Filter buttons — add new ones here as needed -->
-      <div class="filter-bar" role="group" aria-label="Filter by category">
-        <button class="filter-btn active" data-filter="all">All</button>
-        <button class="filter-btn" data-filter="rev">Reversing</button>
-        <button class="filter-btn" data-filter="web">Web</button>
-        <button class="filter-btn" data-filter="pwn">Pwn</button>
-        <button class="filter-btn" data-filter="misc">Misc</button>
-        <button class="filter-btn" data-filter="htb">HTB</button>
-      </div>
+        <h1>Akshay B</h1>
 
-      <!-- Result count — updated live by writeups.js -->
-      <span id="result-count"></span>
+        <!-- One-liner: what you do -->
+        <p class="hero-sub">Reverse engineering binaries, breaking CTF challenges.</p>
 
-      <!--
-        Cards are injected here by writeups.js.
-        Do not put any <article> elements here manually —
-        they will be overwritten when the page loads.
-      -->
-      <div class="cards-grid" id="cards-grid">
-        <!-- Loading state — replaced by JS -->
-        <p id="loading-msg" style="
-          font-family: 'IBM Plex Mono', monospace;
-          font-size: 12px;
-          color: var(--text-dim);
-          padding: 8px 0;
-        ">Loading writeups...</p>
-      </div>
+        <!-- Quick identity badges -->
+        <div class="hero-badges">
+          <span class="tag tag--htb">HTB Player</span>
+          <span class="tag tag--rev">Reverse Engineering</span>
+          <span class="tag tag--web">Web</span>
+          <span class="tag tag--misc">CTF</span>
+        </div>
+      </section>
 
-      <!-- Empty state — shown when search returns nothing -->
-      <div id="no-results">No writeups match your search.</div>
+      <hr>
 
-    </div>
+
+      <!-- ── ABOUT ─────────────────────────── -->
+      <section class="about">
+        <span class="section-label">About</span>
+
+        <!--
+          Edit this text freely.
+          Keep paragraphs short — they read better on screens.
+        -->
+        <p>
+          Security researcher with a focus on binary reversing and low-level
+          exploitation. I compete in CTF competitions and document my process
+          to help others learn the methodology, not just the answer.
+        </p>
+        <p>
+          Most of my time goes into Hack The Box challenges, static analysis
+          with Ghidra, and writing clean documentation of what I find.
+          Occasionally dabble in web and OSINT.
+        </p>
+
+        <!-- Divider with centered label — defined in index.css -->
+        <div class="labeled-hr"><span>Tools &amp; Stack</span></div>
+
+        <!--
+          TOOLS GRID
+          Add or remove <div class="tool-item"> entries freely.
+          They auto-reflow into columns.
+        -->
+        <div class="tools-grid">
+          <div class="tool-item">Ghidra</div>
+          <div class="tool-item">GDB + pwndbg</div>
+          <div class="tool-item">radare2</div>
+          <div class="tool-item">pwntools</div>
+          <div class="tool-item">strings / ltrace</div>
+          <div class="tool-item">Wireshark</div>
+          <div class="tool-item">Burp Suite</div>
+          <div class="tool-item">Python 3</div>
+          <div class="tool-item">Linux / Bash</div>
+          <div class="tool-item">x86 / x86-64 ASM</div>
+        </div>
+      </section>
+
+      <hr>
+
+
+      <!-- ── LATEST WRITEUPS ──────────────────────────────────
+           Rows are injected automatically by index.js,
+           which reads writeups/index.json — the same source
+           of truth used by the full writeups listing page.
+           Only the 3 most recent entries are shown.
+           To change that limit, edit RECENT_LIMIT in index.js.
+      ─────────────────────────────────────────────────────── -->
+      <section class="latest-writeups">
+        <span class="section-label">Recent Writeups</span>
+
+        <!-- Rows injected here by index.js -->
+        <div id="recent-writeups-list"></div>
+
+        <a href="writeups.html" class="view-all-link">View all writeups →</a>
+      </section>
+
+
+      <!-- ── SOCIAL / CONTACT ───────────────── -->
+      <section>
+        <span class="section-label">Find me</span>
+
+        <div class="social-row">
+          <!--
+            Update href values with your actual profile URLs.
+          -->
+          <a class="social-link" href="https://github.com/akshayb72" target="_blank" rel="noopener">GitHub</a>
+          <a class="social-link" href="https://app.hackthebox.com/users/akshayb72" target="_blank" rel="noopener">HackTheBox</a>
+          <!-- Add more as needed: -->
+          <!-- <a class="social-link" href="https://twitter.com/yourhandle" target="_blank" rel="noopener">Twitter</a> -->
+        </div>
+      </section>
+
+
+    </div><!-- /layout -->
   </main>
 
+
+  <!-- ══════════════════════════════════════
+       FOOTER — copy to every page
+  ═══════════════════════════════════════════ -->
   <footer class="footer">
     <div class="footer-inner">
       <span>akshayb72.github.io</span>
@@ -107,7 +174,13 @@
     </div>
   </footer>
 
+
+  <!--
+    main.js  → theme toggle, nav, animations (every page)
+    index.js → fetches writeups/index.json and populates
+               the Recent Writeups section automatically
+  -->
   <script src="js/main.js"></script>
-  <script src="js/writeups.js"></script>
+  <script src="js/index.js"></script>
 </body>
 </html>
