@@ -1,8 +1,208 @@
-<html>
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<!--
+  index.html — Landing / profile page
+  ─────────────────────────────────────
+  To customise this page:
+    1. Replace "akshayb72" with your username in nav, hero, footer
+    2. Edit the About text in <section class="about">
+    3. Add/remove tools in <div class="tools-grid">
+    4. Add recent writeups in <section class="latest-writeups">
+    5. Update social links at the bottom
+
+  Files used by this page:
+    css/style.css   → shared variables, nav, footer, typography
+    css/index.css   → landing-page-specific styles
+    js/main.js      → theme toggle, nav highlighting, animations
+-->
 <head>
-  <title> Test </title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>akshayb72 — Security Researcher</title>
+  <meta name="description" content="akshayb72 — Reverse engineering, CTF writeups, and security research.">
+
+  <!-- Shared stylesheet first, then page-specific -->
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/index.css">
 </head>
 <body>
-  <h1>Test</h1>
+
+  <!-- ══════════════════════════════════════
+       NAV BAR
+       Defined once here; copy exactly to every page.
+       active class is set by main.js automatically.
+  ═══════════════════════════════════════════ -->
+  <nav class="nav">
+    <div class="nav-inner">
+      <!-- Logo / home link -->
+      <a href="index.html" class="nav-logo">akshayb72</a>
+
+      <div class="nav-links">
+        <a href="index.html">Home</a>
+        <a href="writeups.html">Writeups</a>
+        <!-- Add more links here as needed -->
+        <!-- <a href="tools.html">Tools</a> -->
+
+        <!--
+          Theme toggle button.
+          Icon is set by applyTheme() in main.js.
+          aria-label is also updated by JS.
+        -->
+        <button id="theme-toggle" aria-label="Toggle theme">◑</button>
+      </div>
+    </div>
+  </nav>
+
+
+  <!-- ══════════════════════════════════════
+       PAGE CONTENT
+  ═══════════════════════════════════════════ -->
+  <main class="page-body">
+    <div class="layout">
+
+
+      <!-- ── HERO ─────────────────────────── -->
+      <section class="hero">
+        <!-- Filesystem-style breadcrumb — purely aesthetic -->
+        <div class="hero-path">~/akshayb72</div>
+
+        <h1>Akshay B</h1>
+
+        <!-- One-liner: what you do -->
+        <p class="hero-sub">Reverse engineering binaries, breaking CTF challenges.</p>
+
+        <!-- Quick identity badges -->
+        <div class="hero-badges">
+          <span class="tag tag--htb">HTB Player</span>
+          <span class="tag tag--rev">Reverse Engineering</span>
+          <span class="tag tag--web">Web</span>
+          <span class="tag tag--misc">CTF</span>
+        </div>
+      </section>
+
+      <hr>
+
+
+      <!-- ── ABOUT ─────────────────────────── -->
+      <section class="about">
+        <span class="section-label">About</span>
+
+        <!--
+          Edit this text freely.
+          Keep paragraphs short — they read better on screens.
+        -->
+        <p>
+          Security researcher with a focus on binary reversing and low-level
+          exploitation. I compete in CTF competitions and document my process
+          to help others learn the methodology, not just the answer.
+        </p>
+        <p>
+          Most of my time goes into Hack The Box challenges, static analysis
+          with Ghidra, and writing clean documentation of what I find.
+          Occasionally dabble in web and OSINT.
+        </p>
+
+        <!-- Divider with centered label — defined in index.css -->
+        <div class="labeled-hr"><span>Tools &amp; Stack</span></div>
+
+        <!--
+          TOOLS GRID
+          Add or remove <div class="tool-item"> entries freely.
+          They auto-reflow into columns.
+        -->
+        <div class="tools-grid">
+          <div class="tool-item">Ghidra</div>
+          <div class="tool-item">GDB + pwndbg</div>
+          <div class="tool-item">radare2</div>
+          <div class="tool-item">pwntools</div>
+          <div class="tool-item">strings / ltrace</div>
+          <div class="tool-item">Wireshark</div>
+          <div class="tool-item">Burp Suite</div>
+          <div class="tool-item">Python 3</div>
+          <div class="tool-item">Linux / Bash</div>
+          <div class="tool-item">x86 / x86-64 ASM</div>
+        </div>
+      </section>
+
+      <hr>
+
+
+      <!-- ── LATEST WRITEUPS ────────────────── -->
+      <section class="latest-writeups">
+        <span class="section-label">Recent Writeups</span>
+
+        <!--
+          Each .writeup-row is one entry.
+          Copy the block and update:
+            href      → path to the writeup file
+            title     → challenge name
+            .tag      → category tag
+            .writeup-date → publication date
+
+          The .animate-in class triggers a fade-in via main.js.
+          You can add more rows without touching any JS.
+        -->
+
+        <div class="writeup-row animate-in">
+          <a href="writeups/spookypass.html" class="writeup-row-title">SpookyPass</a>
+          <div class="writeup-row-meta">
+            <span class="tag tag--rev">Rev</span>
+            <span class="tag tag--htb">HTB</span>
+            <span class="writeup-date">Jun 2025</span>
+          </div>
+        </div>
+
+        <!-- ↓ Add more writeup rows here following the same pattern ↓ -->
+        <!--
+        <div class="writeup-row animate-in">
+          <a href="writeups/yourchallenge.html" class="writeup-row-title">Your Challenge</a>
+          <div class="writeup-row-meta">
+            <span class="tag tag--pwn">Pwn</span>
+            <span class="tag tag--htb">HTB</span>
+            <span class="writeup-date">Jun 2025</span>
+          </div>
+        </div>
+        -->
+
+        <a href="writeups.html" class="view-all-link">View all writeups →</a>
+      </section>
+
+
+      <!-- ── SOCIAL / CONTACT ───────────────── -->
+      <section>
+        <span class="section-label">Find me</span>
+
+        <div class="social-row">
+          <!--
+            Update href values with your actual profile URLs.
+          -->
+          <a class="social-link" href="https://github.com/akshayb72" target="_blank" rel="noopener">GitHub</a>
+          <a class="social-link" href="https://app.hackthebox.com/users/akshayb72" target="_blank" rel="noopener">HackTheBox</a>
+          <!-- Add more as needed: -->
+          <!-- <a class="social-link" href="https://twitter.com/yourhandle" target="_blank" rel="noopener">Twitter</a> -->
+        </div>
+      </section>
+
+
+    </div><!-- /layout -->
+  </main>
+
+
+  <!-- ══════════════════════════════════════
+       FOOTER — copy to every page
+  ═══════════════════════════════════════════ -->
+  <footer class="footer">
+    <div class="footer-inner">
+      <span>akshayb72.github.io</span>
+      <span>reverse engineering · ctf writeups</span>
+    </div>
+  </footer>
+
+
+  <!--
+    Scripts at end of body so HTML is parsed first.
+    main.js handles theme, nav active state, animations.
+  -->
+  <script src="js/main.js"></script>
 </body>
 </html>
