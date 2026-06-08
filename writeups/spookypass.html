@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<!--
+  writeups/spookypass.html — Individual writeup page
+  ────────────────────────────────────────────────────
+  This file is also the TEMPLATE for new writeups.
+  To create a new writeup:
+    1. Copy this file into the writeups/ folder
+    2. Rename it (e.g. babyre.html)
+    3. Find and replace "SpookyPass" with your challenge name
+    4. Update the breadcrumb, tags, date, and step content
+    5. Add it to writeups.html as a new .card
+
+  CSS paths from writeups/ go up one level: ../css/
+  JS  paths from writeups/ go up one level: ../js/
+-->
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SpookyPass — akshayb72</title>
+  <meta name="description" content="HTB SpookyPass writeup — recovering a hardcoded password using strings.">
+
+  <!-- Note the ../ prefix — this file lives in writeups/ subdirectory -->
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/writeup.css">
+</head>
+<body>
+
+  <!-- NAV — identical on every page (paths go up one level) -->
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="../index.html" class="nav-logo">akshayb72</a>
+      <div class="nav-links">
+        <a href="../index.html">Home</a>
+        <a href="../writeups.html">Writeups</a>
+        <button id="theme-toggle" aria-label="Toggle theme">◑</button>
+      </div>
+    </div>
+  </nav>
+
+
+  <main class="page-body">
+    <div class="layout">
+
+      <!-- ── WRITEUP HEADER ────────────────────── -->
+      <header class="writeup-header">
+
+        <!-- Breadcrumb navigation -->
+        <div class="breadcrumb">
+          <a href="../index.html">akshayb72</a>
+          <span>/</span>
+          <a href="../writeups.html">writeups</a>
+          <span>/</span>
+          SpookyPass
+        </div>
+
+        <h1>SpookyPass</h1>
+
+        <!-- Tags and date in the same row -->
+        <div class="writeup-meta">
+          <span class="tag tag--htb">HTB</span>
+          <span class="tag tag--rev">Reverse Engineering</span>
+          <span class="tag">Easy</span>
+          <span class="writeup-date">June 2025</span>
+        </div>
+
+      </header>
+
+
+      <!-- ── WRITEUP BODY ──────────────────────── -->
+      <article class="writeup-body">
+
+        <!--
+          STEP FORMAT:
+          Each <div class="step"> contains:
+            .step-label  → numbered label e.g. "01 / execute"
+            h2           → section title (styled as monospace label)
+            p            → prose explanation
+            pre.terminal → command-line block (optional)
+            .info-box    → tip or observation (optional)
+            .note        → italic note or aside (optional)
+        -->
+
+        <!-- ── STEP 1 ── -->
+        <div class="step">
+          <span class="step-label"><span class="step-num">01</span> / execute</span>
+          <h2>Initial Execution</h2>
+
+          <p>
+            First, run the binary inside a VM to observe its behaviour.
+            It prints a welcome message and prompts for a password.
+            Any wrong input causes it to exit immediately.
+          </p>
+
+          <!--
+            TERMINAL BLOCK
+            data-label appears as a small label in the top-right corner.
+            Use span classes for syntax colouring:
+              .t-cmd  → commands you type
+              .t-out  → normal output
+              .t-key  → keyword / found string
+              .t-flag → flag / success
+              .t-inp  → user input
+              .t-err  → error output
+          -->
+          <pre class="terminal" data-label="shell"><span class="t-cmd">$ ./pass</span>
+<span class="t-out">Welcome to the SPOOKIEST party of the year.
+Before we let you in, you'll need to give us the password:</span>
+<span class="t-err">You're not a real ghost; clear off!</span></pre>
+
+          <!-- Info box: observation or technical note -->
+          <div class="info-box">
+            <strong>Observation</strong>
+            The binary reads from <code>stdin</code> via <code>fgets</code>, compares the
+            input against a hardcoded value, then branches on the result.
+            Classic crackme pattern.
+          </div>
+        </div>
+
+
+        <!-- ── STEP 2 ── -->
+        <div class="step">
+          <span class="step-label"><span class="step-num">02</span> / recon</span>
+          <h2>Static Analysis — strings</h2>
+
+          <p>
+            Before pulling out a disassembler, try the simplest approach: dump
+            all printable strings from the binary. Hardcoded passwords are often
+            stored in plaintext inside the <code>.rodata</code> section.
+          </p>
+
+          <pre class="terminal" data-label="shell"><span class="t-cmd">$ strings pass</span>
+<span class="t-out">/lib64/ld-linux-x86-64.so.2
+fgets
+stdin
+puts
+__stack_chk_fail
+...</span>
+<span class="t-key">s3cr3t_p455_f0r_gh05t5_4nd_gh0ul5</span>
+<span class="t-out">Welcome to the SPOOKIEST party of the year.
+Before we let you in, you'll need to give us the password:
+Welcome inside!</span></pre>
+
+          <p>
+            The password is stored unobfuscated in the binary — no XOR encoding,
+            no hashing. The string <code>s3cr3t_p455_f0r_gh05t5_4nd_gh0ul5</code>
+            stands out immediately among the standard libc imports.
+          </p>
+
+          <!-- Italic aside / note -->
+          <div class="note">
+            If strings alone didn't work, the next step would be
+            <code>ltrace ./pass</code> to watch library calls at runtime,
+            or opening the binary in Ghidra to find the comparison in the decompiled output.
+          </div>
+        </div>
+
+
+        <!-- ── STEP 3 ── -->
+        <div class="step">
+          <span class="step-label"><span class="step-num">03</span> / exploit</span>
+          <h2>Submitting the Password</h2>
+
+          <p>Feed the recovered string as input to the binary.</p>
+
+          <pre class="terminal" data-label="shell"><span class="t-cmd">$ ./pass</span>
+<span class="t-out">Welcome to the SPOOKIEST party of the year.
+Before we let you in, you'll need to give us the password: </span><span class="t-inp">s3cr3t_p455_f0r_gh05t5_4nd_gh0ul5</span>
+<span class="t-out">Welcome inside!</span>
+<span class="t-flag">HTB{...}</span></pre>
+
+          <!-- Result / success box -->
+          <div class="result-box">
+            <span class="result-icon">✓</span>
+            <p>
+              Flag captured.
+              <span>Password comparison succeeded — branch taken to win condition.</span>
+            </p>
+          </div>
+        </div>
+
+
+        <!-- ── TAKEAWAY (no step number needed) ── -->
+        <div class="step">
+          <span class="step-label">Takeaway</span>
+          <h2>Key Takeaway</h2>
+
+          <p>
+            Always start with the lowest-cost recon.
+            <code>strings</code> + <code>file</code> + <code>ltrace</code> resolve a
+            significant portion of easy reversing challenges before a disassembler is
+            ever needed. Match your tool complexity to the resistance of the target.
+          </p>
+
+          <div class="info-box">
+            <strong>Escalation order for easy crackmes</strong>
+            <code>file</code> → <code>strings</code> → <code>ltrace</code> / <code>strace</code>
+            → disassembly (Ghidra / radare2) → dynamic debugging (GDB / pwndbg)
+          </div>
+        </div>
+
+
+      </article><!-- /writeup-body -->
+
+
+      <!-- ── PREV / NEXT NAVIGATION ────────────────
+           Update these links as you add more writeups.
+           Remove the block you don't need (e.g. no "prev" on first writeup).
+      ─────────────────────────────────────────────── -->
+      <nav class="writeup-nav" aria-label="Writeup navigation">
+        <!-- No previous writeup yet -->
+        <span></span>
+
+        <!--
+        <a href="previouschallenge.html" class="writeup-nav-link prev">
+          <span>← Previous</span>
+          Previous Challenge Name
+        </a>
+        -->
+
+        <!--
+        <a href="nextchallenge.html" class="writeup-nav-link next">
+          <span>Next →</span>
+          Next Challenge Name
+        </a>
+        -->
+      </nav>
+
+
+    </div><!-- /layout -->
+  </main>
+
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="footer-inner">
+      <a href="../writeups.html">← All Writeups</a>
+      <span>akshayb72.github.io</span>
+    </div>
+  </footer>
+
+
+  <!-- Note: paths go up one level from writeups/ -->
+  <script src="../js/main.js"></script>
+</body>
+</html>
