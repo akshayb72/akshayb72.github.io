@@ -1,0 +1,267 @@
+/* =============================================================
+   writeup.css — Styles for individual writeup pages
+   (e.g. writeups/spookypass.html)
+
+   Sections:
+   1. Writeup header (title, meta, tags)
+   2. Prose / article body
+   3. Terminal / code blocks
+   4. Step section markers
+   5. Info / note boxes
+   6. Navigation (prev / next)
+   ============================================================= */
+
+
+/* ─────────────────────────────────────────
+   1. WRITEUP HEADER
+   ───────────────────────────────────────── */
+.writeup-header {
+  padding:       52px 0 32px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 40px;
+}
+
+/* e.g. "akshayb72 / writeups / htb" */
+.breadcrumb {
+  font-family:    'IBM Plex Mono', monospace;
+  font-size:      11px;
+  color:          var(--text-dim);
+  letter-spacing: 0.05em;
+  margin-bottom:  18px;
+}
+
+.breadcrumb a {
+  color:      var(--text-dim);
+  transition: color 0.15s;
+}
+.breadcrumb a:hover {
+  color:           var(--text);
+  text-decoration: none;
+}
+.breadcrumb span { margin: 0 6px; }
+
+.writeup-header h1 {
+  font-size:     clamp(26px, 4vw, 38px);
+  margin-bottom: 14px;
+}
+
+/* Row: tags + date */
+.writeup-meta {
+  display:     flex;
+  align-items: center;
+  flex-wrap:   wrap;
+  gap:         10px;
+  margin-top:  8px;
+}
+
+.writeup-meta .writeup-date {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size:   11px;
+  color:       var(--text-dim);
+  margin-left: auto;  /* push date to right */
+}
+
+
+/* ─────────────────────────────────────────
+   2. ARTICLE BODY
+   ───────────────────────────────────────── */
+.writeup-body {
+  /* Limit prose width for readability */
+  max-width: 660px;
+}
+
+.writeup-body p {
+  font-size:     16.5px;
+  line-height:   1.8;
+  margin-bottom: 18px;
+}
+
+.writeup-body h2 {
+  font-family:    'IBM Plex Mono', monospace;
+  font-size:      12px;
+  font-weight:    600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color:          var(--text-dim);
+  margin:         44px 0 14px;
+}
+
+.writeup-body h3 {
+  font-family: 'Newsreader', serif;
+  font-size:   19px;
+  font-weight: 400;
+  color:       var(--text);
+  margin:      28px 0 10px;
+}
+
+
+/* ─────────────────────────────────────────
+   3. TERMINAL / CODE BLOCKS
+   ───────────────────────────────────────── */
+pre.terminal {
+  background:    var(--surface);
+  border:        1px solid var(--border);
+  border-left:   2px solid var(--accent);
+  padding:       18px 20px;
+  font-family:   'IBM Plex Mono', monospace;
+  font-size:     13px;
+  line-height:   1.85;
+  overflow-x:    auto;
+  margin:        18px 0;
+  color:         var(--text-mid);
+  /* Optional: label in top-right corner via data-label attribute */
+  position:      relative;
+}
+
+/* Usage: <pre class="terminal" data-label="shell"> */
+pre.terminal[data-label]::before {
+  content:     attr(data-label);
+  position:    absolute;
+  top:         0;
+  right:       12px;
+  font-size:   9px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color:       var(--text-dim);
+  background:  var(--surface);
+  padding:     0 4px;
+  /* Overlap the top border */
+  transform:   translateY(-50%);
+}
+
+/* Syntax highlight spans — add these inside <pre> manually */
+.t-cmd  { color: var(--text);   font-weight: 600; } /* commands typed  */
+.t-out  { color: var(--text-dim); }                  /* normal output   */
+.t-key  { color: var(--accent); }                    /* keywords/found  */
+.t-flag { color: #5aaa7a; }                          /* flag / success  */
+.t-inp  { color: #6699cc; font-style: italic; }      /* user input      */
+.t-err  { color: #cc6655; }                          /* errors          */
+
+
+/* ─────────────────────────────────────────
+   4. STEP SECTION MARKERS
+   Numbered steps like "01 / execute"
+   ───────────────────────────────────────── */
+.step {
+  margin-bottom: 52px;
+}
+
+/* "01 / execute" above each h2 */
+.step-label {
+  font-family:    'IBM Plex Mono', monospace;
+  font-size:      11px;
+  color:          var(--text-dim);
+  letter-spacing: 0.08em;
+  margin-bottom:  10px;
+  display:        block;
+}
+
+/* The accent-colored step number */
+.step-label .step-num {
+  color: var(--accent);
+}
+
+
+/* ─────────────────────────────────────────
+   5. INFO / NOTE BOXES
+   ───────────────────────────────────────── */
+
+/* Generic note — italic, left border */
+.note {
+  border-left: 2px solid var(--border);
+  padding:     10px 16px;
+  margin:      18px 0;
+  font-size:   15px;
+  font-style:  italic;
+  color:       var(--text-dim);
+}
+
+/* Tip / info box with label */
+.info-box {
+  border:      1px solid var(--border);
+  border-left: 2px solid #6699cc;
+  padding:     14px 18px;
+  margin:      18px 0;
+  font-size:   14.5px;
+  color:       var(--text-mid);
+}
+
+.info-box strong {
+  font-family:    'IBM Plex Mono', monospace;
+  font-size:      10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color:          #6699cc;
+  display:        block;
+  margin-bottom:  6px;
+}
+
+/* Success / flag captured box */
+.result-box {
+  border:      1px solid var(--accent);
+  background:  var(--accent-soft);
+  padding:     16px 20px;
+  margin:      20px 0;
+  display:     flex;
+  align-items: center;
+  gap:         14px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size:   13px;
+  color:       var(--accent);
+}
+
+.result-box .result-icon { font-size: 20px; line-height: 1; }
+
+.result-box p {
+  margin: 0;
+  color:  var(--accent);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size:   13px;
+}
+
+.result-box p span {
+  display:     block;
+  font-size:   11px;
+  color:       var(--text-dim);
+  font-family: 'Newsreader', serif;
+  font-style:  italic;
+  margin-top:  3px;
+}
+
+
+/* ─────────────────────────────────────────
+   6. PREV / NEXT WRITEUP NAVIGATION
+   ───────────────────────────────────────── */
+.writeup-nav {
+  display:         flex;
+  justify-content: space-between;
+  margin-top:      56px;
+  padding-top:     24px;
+  border-top:      1px solid var(--border);
+  gap:             16px;
+  flex-wrap:       wrap;
+}
+
+.writeup-nav-link {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size:   12px;
+  color:       var(--text-dim);
+  transition:  color 0.15s;
+  max-width:   45%;
+}
+
+.writeup-nav-link:hover {
+  color:           var(--text);
+  text-decoration: none;
+}
+
+.writeup-nav-link span {
+  display:     block;
+  font-size:   10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color:       var(--text-dim);
+  margin-bottom: 4px;
+}
+
+.writeup-nav-link.next { text-align: right; margin-left: auto; }

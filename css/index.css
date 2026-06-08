@@ -1,0 +1,221 @@
+/* =============================================================
+   index.css — Styles specific to the landing page (index.html)
+   Imports style.css first, then adds page-specific rules.
+
+   Sections in this file:
+   1. Hero
+   2. About
+   3. Skills / tools list
+   4. Latest writeups strip
+   5. Social links
+   ============================================================= */
+
+
+/* ─────────────────────────────────────────
+   1. HERO SECTION
+   ───────────────────────────────────────── */
+.hero {
+  padding: 72px 0 56px;
+}
+
+/* Breadcrumb-style site path above name */
+.hero-path {
+  font-family:    'IBM Plex Mono', monospace;
+  font-size:      11px;
+  color:          var(--text-dim);
+  letter-spacing: 0.06em;
+  margin-bottom:  20px;
+}
+
+.hero h1 {
+  font-size:     clamp(30px, 5vw, 44px);
+  margin-bottom: 12px;
+  color:         var(--text);
+}
+
+/* The italic subtitle line */
+.hero-sub {
+  font-size:  17px;
+  font-style: italic;
+  color:      var(--text-mid);
+  margin-bottom: 28px;
+}
+
+/* Row of quick-stat badges below subtitle */
+.hero-badges {
+  display:   flex;
+  flex-wrap: wrap;
+  gap:       8px;
+}
+
+
+/* ─────────────────────────────────────────
+   2. ABOUT SECTION
+   ───────────────────────────────────────── */
+.about {
+  padding: 48px 0;
+}
+
+.about p {
+  font-size:   16.5px;
+  line-height: 1.8;
+  max-width:   580px;  /* keep paragraphs comfortable width */
+}
+
+/* Horizontal rule with a label in the middle */
+.labeled-hr {
+  display:     flex;
+  align-items: center;
+  gap:         16px;
+  margin:      40px 0;
+}
+
+.labeled-hr::before,
+.labeled-hr::after {
+  content:    '';
+  flex:       1;
+  border-top: 1px solid var(--border);
+}
+
+.labeled-hr span {
+  font-family:    'IBM Plex Mono', monospace;
+  font-size:      10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color:          var(--text-dim);
+  white-space:    nowrap;
+}
+
+
+/* ─────────────────────────────────────────
+   3. TOOLS / SKILLS LIST
+   A compact two-column grid of tools used.
+   ───────────────────────────────────────── */
+.tools-grid {
+  display:               grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap:                   8px;
+  margin-top:            16px;
+}
+
+.tool-item {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size:   12.5px;
+  color:       var(--text-mid);
+  padding:     8px 12px;
+  border:      1px solid var(--border-soft);
+  background:  var(--surface);
+  /* Small hover lift */
+  transition:  border-color 0.15s, color 0.15s;
+}
+
+.tool-item:hover {
+  border-color: var(--accent);
+  color:        var(--text);
+}
+
+/* Bullet prefix on each tool */
+.tool-item::before {
+  content: '→ ';
+  color:   var(--text-dim);
+}
+
+
+/* ─────────────────────────────────────────
+   4. LATEST WRITEUPS STRIP
+   Shows a few recent writeups inline on homepage.
+   Full list is on writeups.html
+   ───────────────────────────────────────── */
+.latest-writeups {
+  padding: 48px 0;
+}
+
+/* Each row is one writeup preview */
+.writeup-row {
+  display:         flex;
+  align-items:     baseline;
+  justify-content: space-between;
+  padding:         14px 0;
+  border-bottom:   1px solid var(--border-soft);
+  gap:             16px;
+  flex-wrap:       wrap;
+  /* Subtle entrance animation — staggered via nth-child in JS */
+  opacity:         0;
+  transform:       translateY(6px);
+  transition:      opacity 0.3s ease, transform 0.3s ease;
+}
+
+/* JS adds .visible to trigger animation */
+.writeup-row.visible {
+  opacity:   1;
+  transform: translateY(0);
+}
+
+.writeup-row-title {
+  font-family: 'Newsreader', serif;
+  font-size:   16px;
+  font-weight: 400;
+  color:       var(--text);
+  flex:        1;
+  min-width:   160px;
+}
+
+.writeup-row-title:hover {
+  color:           var(--accent);
+  text-decoration: none;
+}
+
+.writeup-row-meta {
+  display:     flex;
+  align-items: center;
+  gap:         10px;
+  flex-shrink: 0;
+}
+
+.writeup-date {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size:   11px;
+  color:       var(--text-dim);
+}
+
+/* "View all →" link */
+.view-all-link {
+  font-family:    'IBM Plex Mono', monospace;
+  font-size:      11px;
+  letter-spacing: 0.08em;
+  color:          var(--text-dim);
+  margin-top:     20px;
+  display:        inline-block;
+  transition:     color 0.15s;
+}
+.view-all-link:hover {
+  color:           var(--text);
+  text-decoration: none;
+}
+
+
+/* ─────────────────────────────────────────
+   5. SOCIAL / CONTACT ROW
+   ───────────────────────────────────────── */
+.social-row {
+  display:   flex;
+  flex-wrap: wrap;
+  gap:       16px;
+  padding:   40px 0 0;
+}
+
+.social-link {
+  font-family:    'IBM Plex Mono', monospace;
+  font-size:      12px;
+  color:          var(--text-dim);
+  letter-spacing: 0.05em;
+  padding:        6px 14px;
+  border:         1px solid var(--border);
+  transition:     border-color 0.15s, color 0.15s;
+}
+
+.social-link:hover {
+  border-color:    var(--accent);
+  color:           var(--accent);
+  text-decoration: none;
+}
