@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Graverobber — akshayb72</title>
+  <meta name="description" content="HTB Graverobber writeup — using strace and Python scripting to uncover a flag hidden in directory paths.">
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/writeup.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="../index.html" class="nav-logo">akshayb72</a>
+      <div class="nav-links">
+        <a href="../index.html">Home</a>
+        <a href="../writeups.html">Writeups</a>
+        <button id="theme-toggle" aria-label="Toggle theme">◑</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="layout">
+
+      <header class="writeup-header">
+        <div class="breadcrumb">
+          <a href="../index.html">akshayb72</a>
+          <span>/</span>
+          <a href="../writeups.html">writeups</a>
+          <span>/</span>
+          Graverobber
+        </div>
+        <h1>Graverobber</h1>
+        <div class="writeup-meta">
+          <span class="tag tag--htb">HTB</span>
+          <span class="tag tag--rev">Reverse Engineering</span>
+          <span class="tag">Very Easy</span>
+          <span class="writeup-date">Jun 2025</span>
+        </div>
+      </header>
+
+      <article class="writeup-body">
+
+        <!-- ── STEP 1 ── -->
+        <div class="step">
+          <span class="step-label"><span class="step-num">01</span> / execute</span>
+          <h2>Initial Execution</h2>
+
+          <p>
+            Run the binary to see what it does. It immediately exits with a single
+            error message — no prompt, no input required.
+          </p>
+
+          <pre class="terminal" data-label="shell"><span class="t-cmd">$ ./robber</span>
+<span class="t-err">We took a wrong turning!</span></pre>
+
+          <div class="info-box">
+            <strong>Observation</strong>
+            The binary exits with code 1 and prints an error. No interesting strings
+            are visible with <code>strings</code> — the flag isn't stored in plaintext.
+            Time to look at what the binary is actually doing at the syscall level.
+          </div>
+        </div>
+
+        <!-- ── STEP 2 ── -->
+        <div class="step">
+          <span class="step-label"><span class="step-num">02</span> / strace</span>
+          <h2>Tracing with strace</h2>
+
+          <p>
+            <code>strace</code> intercepts and records every system call the process makes.
+            Running the binary under it reveals what it's looking for before it exits.
+          </p>
+
+          <pre class="terminal" data-label="shell"><span class="t-cmd">$ strace ./robber</span>
+<span class="t-out">execve("./robber", ["./robber"], 0x7ffe7e76ff20) = 0
+...
+</span><span class="t-key">newfstatat(AT_FDCWD, "H/", 0x7ffcbd70cf50, 0) = -1 ENOENT (No such file or directory)</span>
+<span class="t-out">write(1, "We took a wrong turning!\n", 25) = 25
+exit_group(1)
++++ exited with 1 +++</span></pre>
+
+          <p>
+            The binary calls <code>newfstatat</code> — a syscall that checks whether a
+            file or directory exists — on the path <code>H/</code>. Since that directory
+            doesn't exist, it gets <code>ENOENT</code> and exits. The directory name
+            <code>H</code> is the first character of the flag.
+          </p>
+
+          <div class="note">
+            <code>newfstatat</code> is a variant of <code>stat</code> that checks file
+            metadata. A return of <code>-1 ENOENT</code> means the path does not exist.
+            The binary uses this as a gating mechanism — it only continues if the
+            expected directory tree is present.
+          </div>
+        </div>
+
+        <!-- ── STEP 3 ── -->
+        <div class="step">
+          <span class="step-label"><span class="step-num">03</span> / discovery</span>
+          <h2>Discovering the Pattern</h2>
+
+          <p>
+            Create the directory <code>H</code> and run strace again. The binary gets
+            past the first check and immediately looks for the next directory.
+          </p>
+
+          <pre class="terminal" data-label="shell"><span class="t-cmd">$ mkdir H && strace ./robber</span>
+<span class="t-out">...
+newfstatat(AT_FDCWD, "H/", {st_mode=S_IFDIR|0755, ...}, 0) = 0</span>
+<span class="t-key">newfstatat(AT_FDCWD, "H/T/", 0x7fff03f91e00, 0) = -1 ENOENT (No such file or directory)</span>
+<span class="t-out">write(1, "We took a wrong turning!\n", 25) = 25
+exit_group(1)</span></pre>
+
+          <p>
+            Now it looks for <code>H/T/</code>. The binary encodes the flag as a
+            sequence of nested directories — each character of the flag is a directory
+            name, nested inside the previous one. Creating them manually would take
+            forever. We need a script.
+          </p>
+        </div>
+
+        <!-- ── STEP 4 ── -->
+        <div class="step">
+          <span class="step-label"><span class="step-num">04</span> / scripting</span>
+          <h2>Automating with Python</h2>
+
+          <p>
+            The script runs the binary under strace in a loop, reads the last
+            <code>newfstatat</code> call to find which directory is expected next,
+            creates it, and repeats until the binary stops printing the error message.
+          </p>
+
+          <pre class="terminal" data-label="python"><span class="t-out">
+import os
+import shutil
+from pwn import *
+
+# removes previous dirs and creates new ones
+if os.path.exists("directories"):
+    shutil.rmtree("directories")
+os.mkdir("directories")
+os.chdir("directories")
+
+while True:
+    with context.local(log_level='ERROR'):
+        p = process(["strace", "-e", "newfstatat", "../robber"])
+        out = p.recvall().decode()
+        p.close()
+
+    if 'wrong turning' not in out:
+        print(out)
+        break
+
+    stats = [line for line in out.split("\n") if "newfstatat" in line]
+
+    flag = ""
+
+    path = stats[-1].split('"')[1]
+
+    flag += path.replace("/", "")
+
+    os.makedirs(path, exist_ok=True)
+
+print(flag)
+  </span></pre>
+
+          <div class="info-box">
+            <strong>Why <code>exist_ok=True</code></strong>
+            Without it, <code>os.makedirs</code> raises an error if the directory
+            already exists — which happens on any re-run of the script. The flag on
+            this initial fix prevents a crash between iterations.
+          </div>
+        </div>
+
+        <!-- ── STEP 5 ── -->
+        <div class="step">
+          <span class="step-label"><span class="step-num">05</span> / flag</span>
+          <h2>Getting the Flag</h2>
+
+          <p>
+            Run the script. It prints each directory character as it creates it,
+            spelling out the flag letter by letter until the binary exits cleanly.
+          </p>
+
+          <pre class="terminal" data-label="shell"><span class="t-cmd">$ python flag.py</span>
+<span class="t-flag">HTB{...}</span></pre>
+
+          <div class="result-box">
+            <span class="result-icon">✓</span>
+            <p>
+              Flag captured.
+              <span>
+                Each directory name was one character of the flag. The binary used
+                <code>newfstatat</code> to spell out the flag one level at a time —
+                the script reconstructed it by reading the last failing syscall on
+                each iteration.
+              </span>
+            </p>
+          </div>
+        </div>
+
+        <!-- ── TAKEAWAY ── -->
+        <div class="step">
+          <span class="step-label">Takeaway</span>
+          <h2>Key Takeaway</h2>
+
+          <p>
+            When <code>strings</code> gives nothing useful, <code>strace</code> is
+            the next tool to reach for. A binary that checks for files or directories
+            is leaking its logic through syscalls — you can read its expectations
+            directly from the trace without ever disassembling it.
+          </p>
+
+          <div class="info-box">
+            <strong>Skills practised</strong>
+            <code>strace -e</code> filtering · reading <code>newfstatat</code> output ·
+            pwntools <code>process</code> + <code>recvall</code> ·
+            automating a manual feedback loop with Python
+          </div>
+        </div>
+
+      </article>
+
+      <nav class="writeup-nav" aria-label="Writeup navigation">
+        <a href="spookypass.html" class="writeup-nav-link prev">
+          <span>← Previous</span>
+          SpookyPass
+        </a>
+        <span></span>
+      </nav>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <a href="../writeups.html">← All Writeups</a>
+      <span>akshayb72.github.io</span>
+    </div>
+  </footer>
+
+  <script src="../js/main.js"></script>
+</body>
+</html>
