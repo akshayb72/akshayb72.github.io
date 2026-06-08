@@ -3,14 +3,14 @@
     "title":       "Graverobber",
     "file":        "graverobber.html",
     "description": "Binary encodes the flag as nested directory names. Used strace to read newfstatat syscalls and Python to automate directory creation.",
-    "tags":        ["rev", "htb", "veryeasy"],
+    "tags":        ["rev", "htb", "very easy"],
     "date":        "Jun 2025"
   },
   {
     "title":       "SpookyPass",
     "file":        "spookypass.html",
     "description": "Classic crackme binary. Recovering a hardcoded password using the strings command — no disassembler required.",
-    "tags":        ["rev", "htb", "easy"],
+    "tags":        ["rev", "htb", "very easy"],
     "date":        "Jun 2025"
   }
 ]
