@@ -102,6 +102,7 @@ pre.terminal {
   background:    var(--surface);
   border:        1px solid var(--border);
   border-left:   2px solid var(--accent);
+  /* Extra top padding when a label is present — handled below */
   padding:       18px 20px;
   font-family:   'IBM Plex Mono', monospace;
   font-size:     13px;
@@ -109,24 +110,26 @@ pre.terminal {
   overflow-x:    auto;
   margin:        18px 0;
   color:         var(--text-mid);
-  /* Optional: label in top-right corner via data-label attribute */
   position:      relative;
+}
+
+/* When a data-label is present, add top padding to clear the label */
+pre.terminal[data-label] {
+  padding-top: 34px;  /* label height (~14px) + comfortable gap */
 }
 
 /* Usage: <pre class="terminal" data-label="shell"> */
 pre.terminal[data-label]::before {
-  content:     attr(data-label);
-  position:    absolute;
-  top:         0;
-  right:       12px;
-  font-size:   9px;
+  content:        attr(data-label);
+  position:       absolute;
+  /* Sit fully INSIDE the box — no translateY overflow */
+  top:            10px;
+  right:          14px;
+  font-size:      9px;
   letter-spacing: 0.15em;
   text-transform: uppercase;
-  color:       var(--text-dim);
-  background:  var(--surface);
-  padding:     0 4px;
-  /* Overlap the top border */
-  transform:   translateY(-50%);
+  color:          var(--text-dim);
+  /* No background needed — sits inside the pre now */
 }
 
 /* Syntax highlight spans — add these inside <pre> manually */
