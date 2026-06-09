@@ -3,7 +3,7 @@
   "title":       "Vantage",
   "file":        "vantage.html",
   "description": "DFIR analysis of an OpenStack breach across two network captures. Fuzzing, credential theft, data exfiltration, and cloud persistence.",
-  "tags":        ["dfir","htb"],
+  "tags":        ["dfir","htb","very easy"],
   "date":        "Jun 2026"
 },
   {
