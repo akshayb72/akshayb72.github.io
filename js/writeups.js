@@ -41,10 +41,11 @@ const TAG_CLASSES = {
   web:  'tag--web',
   pwn:  'tag--pwn',
   misc: 'tag--misc',
+   dfir:'tag--dfir'
 };
 
 /* Known difficulty labels — rendered without a color class */
-const DIFFICULTY_TAGS = new Set(['easy', 'medium', 'hard', 'veryeasy', 'insane']);
+const DIFFICULTY_TAGS = new Set(['very easy','easy', 'medium', 'hard', 'veryeasy', 'insane']);
 
 
 /* ─────────────────────────────────────────
