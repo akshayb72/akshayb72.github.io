@@ -378,7 +378,7 @@
 <span class="t-key">          "default_project_id": "9fb84977ff7c4a0baf0d5dbb57e235c7",</span>
 <span class="t-key">          "name": "jellibean"}}</span>
 <span class="t-flag">HTTP/1.1 201 CREATED</span>
-<span class="t-out">{"user": {"id": "c373da67a62b48f393c45dc071fa80b8", "name": "jellibean", ...}}</span></pre>
+<span class="t-key">{"user": {"id": "c373da67a62b48f393c45dc071fa80b8", "name": "jellibean", ...}}</span></pre>
 
           <div class="task-grid">
             <div class="task-block">
@@ -391,6 +391,9 @@
 
             <div class="task-block">
               <p class="task-q">Task 13 — What is the password of the new user?</p>
+                 <p>
+            The password is visible from the packets in the last task.
+          </p>
               <button class="reveal-btn" onclick="toggleReveal(this)">
                 <span class="reveal-icon">▶</span> reveal answer
               </button>
@@ -398,12 +401,7 @@
             </div>
           </div>
 
-          <p>
-            The attacker then assigned an admin role to the new account via a PUT request —
-            confirming this was a persistence move, not a test account. Looking at MITRE
-            ATT&amp;CK, creating a new account in a cloud tenant maps to T1136 with
-            sub-technique .003.
-          </p>
+       
 
           <pre class="terminal" data-label="wireshark">
 <span class="t-out">PUT /identity/v3/projects/9fb84977.../users/c373da67.../roles/...</span>
@@ -411,6 +409,9 @@
 
           <div class="task-block">
             <p class="task-q">Task 14 — What is the MITRE technique ID for the persistence technique in Task 12?</p>
+            The attacker created an account for persistance.Looking at MITRE
+            ATT&amp;CK, creating a new account in a cloud tenant maps to T1136 with
+            sub-technique .003.
             <button class="reveal-btn" onclick="toggleReveal(this)">
               <span class="reveal-icon">▶</span> reveal answer
             </button>
