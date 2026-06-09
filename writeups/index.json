@@ -1,5 +1,12 @@
 [
   {
+  "title":       "Vantage",
+  "file":        "vantage.html",
+  "description": "DFIR analysis of an OpenStack breach across two network captures. Fuzzing, credential theft, data exfiltration, and cloud persistence.",
+  "tags":        ["htb", "misc"],
+  "date":        "Jul 2025"
+},
+  {
     "title":       "Graverobber",
     "file":        "graverobber.html",
     "description": "Binary encodes the flag as nested directory names. Used strace to read newfstatat syscalls and Python to automate directory creation.",
