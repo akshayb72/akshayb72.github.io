@@ -77,8 +77,8 @@
           <h2>Identifying the Fuzzing Tool</h2>
 
           <p>
-            Open <code>webserver.xxx.pcap</code> and jump straight to packet 116. Expand the
-            HTTP layer — the <code>User-Agent</code> header gives the tool and its version
+            Open <code>webserver.xxx.pcap</code> and use the filter http in wireshark.Then go through the packets and I see the packet 116.Expand the
+            HTTP layer for the packet and the <code>User-Agent</code> header gives the tool and its version
             immediately.
           </p>
 
