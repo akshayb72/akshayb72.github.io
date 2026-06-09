@@ -76,25 +76,23 @@
 
 
         <!-- ── STEP 2: INITIAL RECON (Tasks 1–2) ──────────────── -->
-        <div class="step">
-          <span class="step-label">
-            <span class="step-num">02</span> / webserver-pcap
-          </span>
-          <h2>Fuzzing and Subdomain Discovery</h2>
-
+              <div class="step">
+          <span class="step-label"><span class="step-num">02</span> / webserver-pcap</span>
+          <h2>Identifying the Fuzzing Tool</h2>
+ 
           <p>
-            The first thing the attacker did was fuzz the webserver. Open
-            <code>webserver.xxx.pcap</code> and set filter to http.Then as I go through the packets and when you get to the packet 116.Expand the HTTP
-            layer and look at the <code>User-Agent</code> header — it's not a browser.
+            Open <code>webserver.xxx.pcap</code> and jump straight to packet 116. Expand the
+            HTTP layer — the <code>User-Agent</code> header gives the tool and its version
+            immediately.
           </p>
-
+ 
           <pre class="terminal" data-label="wireshark">
-<span class="t-cmd">frame.number == 116</span>
+<span class="t-cmd">Filter: frame.number == 116</span>
 <span class="t-out">GET / HTTP/1.1</span>
 <span class="t-out">Host: dev.vantage.tech</span>
 <span class="t-key">User-Agent: Fuzz Faster U Fool v2.1.0-dev</span>
 <span class="t-out">Accept-Encoding: gzip</span></pre>
-
+ 
           <div class="task-block">
             <p class="task-q">Task 1 — What tool did the attacker use to fuzz the web server? (include version)</p>
             <button class="reveal-btn" onclick="toggleReveal(this)">
@@ -102,28 +100,8 @@
             </button>
             <div class="reveal-answer">ffuf@2.1.0</div>
           </div>
-
-          <p>
-            To find the subdomain the attacker discovered, filter <code>webserver.pcap</code>
-            by HTTP only, then sort by packet length descending. Work down the list until you
-            reach packet 21098. The <code>Host</code> header and the Wireshark HTTP object list
-            both show traffic going to a different hostname than the main site.
-          </p>
-
-          <pre class="terminal" data-label="wireshark">
-<span class="t-cmd">Filter: http</span>
-<span class="t-out">Sort by: Length (largest first)</span>
-<span class="t-out">Scroll to packet 21098...</span>
-<span class="t-key">Host: cloud.vantage.tech</span></pre>
-
-          <div class="task-block">
-            <p class="task-q">Task 2 — Which subdomain did the attacker discover?</p>
-            <button class="reveal-btn" onclick="toggleReveal(this)">
-              <span class="reveal-icon">▶</span> reveal answer
-            </button>
-            <div class="reveal-answer">cloud</div>
-          </div>
         </div>
+ 
 
 
         <!-- ── STEP 3: DASHBOARD LOGIN (Task 3) ───────────────── -->
