@@ -266,7 +266,7 @@ hr {
 .tag--web  { border-color: #27ae6044; color: #5aaa7a; }
 .tag--pwn  { border-color: #8e44ad44; color: #9b7fd4; }
 .tag--misc { border-color: #f39c1244; color: #c9922a; }
-
+.tag--dfir { border-color: #16a08544; color: #1abc9c; }
 
 /* ─────────────────────────────────────────
    8. FOOTER
