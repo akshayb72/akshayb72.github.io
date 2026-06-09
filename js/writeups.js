@@ -45,7 +45,7 @@ const TAG_CLASSES = {
 };
 
 /* Known difficulty labels — rendered without a color class */
-const DIFFICULTY_TAGS = new Set(['very easy','easy', 'medium', 'hard', 'veryeasy', 'insane']);
+const DIFFICULTY_TAGS = new Set(['easy', 'medium', 'hard', 'veryeasy', 'insane']);
 
 
 /* ─────────────────────────────────────────
