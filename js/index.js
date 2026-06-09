@@ -22,6 +22,7 @@ const TAG_CLASSES_IDX = {
   web:  'tag--web',
   pwn:  'tag--pwn',
   misc: 'tag--misc',
+  dfir: 'tag--dfir'
 };
 
 
