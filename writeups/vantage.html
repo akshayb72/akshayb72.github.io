@@ -318,7 +318,7 @@
           <pre class="terminal" data-label="wireshark">
 <span class="t-cmd">Filter: ip.dst == 134.209.71.220 &amp;&amp; http.request.uri contains "/v1"</span>
 <span class="t-key">Pkt 16398 — GET .../user-data/user-details.csv HTTP/1.1</span>
-<span class="t-out">UTC Arrival Time: 2025-07-01 09:45:23</span></pre>
+<span class="t-out">UTC Arrival Time: 2025-07-01 ....</span></pre>
 
           <div class="task-block">
             <p class="task-q">Task 10 — When did the attacker download the sensitive user data file? (UTC)</p>
@@ -344,7 +344,7 @@
           <pre class="terminal" data-label="shell">
 <span class="t-cmd">$ sed '/^[[:space:]]*$/d' user-details.csv | wc -l</span>
 <span class="t-out">29</span>
-<span class="t-out"># 29 total lines — 1 header row = 28 data records</span></pre>
+
 
           <div class="task-block">
             <p class="task-q">Task 11 — How many user records are in the sensitive user data file?</p>
