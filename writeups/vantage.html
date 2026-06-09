@@ -7,7 +7,6 @@
   <meta name="description" content="HTB Sherlocks Vantage writeup — PCAP analysis of an OpenStack breach across two network captures.">
   <link rel="stylesheet" href="../css/style.css">
   <link rel="stylesheet" href="../css/writeup.css">
-  <!-- reveal styles moved to writeup.css — no inline style block needed -->
 </head>
 <body>
 
@@ -34,14 +33,11 @@
           <span>/</span>
           Vantage
         </div>
-
         <h1>Vantage</h1>
-
         <div class="writeup-meta">
           <span class="tag tag--htb">HTB</span>
-         
+          <span class="tag tag--misc">Sherlocks</span>
           <span class="tag">DFIR</span>
-           <span class="tag tag--misc">Sherlocks</span>
           <span class="tag">Medium</span>
           <span class="writeup-date">Jul 2025</span>
         </div>
@@ -51,48 +47,46 @@
       <article class="writeup-body">
 
 
-        <!-- ── STEP 1: OVERVIEW ────────────────────────────────── -->
+        <!-- ── STEP 1: OVERVIEW ──────────────────────────────────── -->
         <div class="step">
-          <span class="step-label">
-            <span class="step-num">01</span> / overview
-          </span>
+          <span class="step-label"><span class="step-num">01</span> / overview</span>
           <h2>What We're Given</h2>
 
           <p>
-            Vantage is an HTB Sherlocks DFIR challenge. We're handed two packet captures:
+            Vantage is an HTB Sherlocks DFIR challenge. We're given two packet captures:
             <code>controller.xxx.pcap</code> and <code>webserver.xxx.pcap</code>. The scenario
-            is an OpenStack environment — a webserver running a dashboard (Horizon), and a
-            separate controller node running the OpenStack API services. We need to trace an
-            attacker from their initial recon through to persistence.
+            is an OpenStack environment — a public-facing web dashboard (Horizon) on the
+            webserver, and the OpenStack API services on the controller node. The goal is to
+            trace the attacker from initial recon through to persistence.
           </p>
 
           <div class="info-box">
             <strong>Environment layout</strong>
             Two captures = two vantage points. The webserver pcap shows what hit the
             public-facing dashboard. The controller pcap shows the attacker talking directly
-            to the OpenStack REST APIs after they had credentials.
+            to the OpenStack REST APIs once they had credentials.
           </div>
         </div>
 
 
-        <!-- ── STEP 2: INITIAL RECON (Tasks 1–2) ──────────────── -->
-              <div class="step">
+        <!-- ── STEP 2: FUZZING (Task 1) ──────────────────────────── -->
+        <div class="step">
           <span class="step-label"><span class="step-num">02</span> / webserver-pcap</span>
           <h2>Identifying the Fuzzing Tool</h2>
- 
+
           <p>
             Open <code>webserver.xxx.pcap</code> and jump straight to packet 116. Expand the
             HTTP layer — the <code>User-Agent</code> header gives the tool and its version
             immediately.
           </p>
- 
+
           <pre class="terminal" data-label="wireshark">
 <span class="t-cmd">Filter: frame.number == 116</span>
 <span class="t-out">GET / HTTP/1.1</span>
 <span class="t-out">Host: dev.vantage.tech</span>
 <span class="t-key">User-Agent: Fuzz Faster U Fool v2.1.0-dev</span>
 <span class="t-out">Accept-Encoding: gzip</span></pre>
- 
+
           <div class="task-block">
             <p class="task-q">Task 1 — What tool did the attacker use to fuzz the web server? (include version)</p>
             <button class="reveal-btn" onclick="toggleReveal(this)">
@@ -101,32 +95,63 @@
             <div class="reveal-answer">ffuf@2.1.0</div>
           </div>
         </div>
- 
 
 
-        <!-- ── STEP 3: DASHBOARD LOGIN (Task 3) ───────────────── -->
+        <!-- ── STEP 3: SUBDOMAIN DISCOVERY (Task 2) ─────────────── -->
         <div class="step">
-          <span class="step-label">
-            <span class="step-num">03</span> / dashboard-login
-          </span>
-          <h2>Brute-Forcing the Dashboard</h2>
+          <span class="step-label"><span class="step-num">03</span> / subdomain</span>
+          <h2>Finding the Discovered Subdomain</h2>
 
           <p>
-            With the subdomain found, the attacker went after the login page at
-            <code>cloud.vantage.tech/dashboard/auth/login/</code>. Filter the webserver pcap
-            to show only POST requests to that path.
+            Since ffuf was fuzzing for subdomains, we want the hits — responses that came
+            back 200 OK rather than 404. Filter for HTTP 200 responses destined for the
+            attacker's IP:
           </p>
 
           <pre class="terminal" data-label="wireshark">
-<span class="t-cmd">Filter: http.request.method == "POST" && http.request.uri contains "auth/login"</span>
+<span class="t-cmd">Filter: ip.dst == 117.200.21.26 &amp;&amp; _ws.col.info == "HTTP/1.1 200 OK  (text/html)"</span>
+<span class="t-out">Many results — most have frame.len == 596 (the baseline fuzz response)</span></pre>
+
+          <p>
+            Most results share the same length of 596 — that's the generic response ffuf gets
+            back for non-existent subdomains. Excluding that length isolates the real hits:
+          </p>
+
+          <pre class="terminal" data-label="wireshark">
+<span class="t-cmd">Refine: ip.dst == 117.200.21.26 &amp;&amp; _ws.col.info == "HTTP/1.1 200 OK  (text/html)" &amp;&amp; frame.len != 596</span>
+<span class="t-out">Down to 12 packets — all hitting http://cloud.vantage.tech</span>
+<span class="t-key">Host: cloud.vantage.tech</span></pre>
+
+          <div class="task-block">
+            <p class="task-q">Task 2 — Which subdomain did the attacker discover?</p>
+            <button class="reveal-btn" onclick="toggleReveal(this)">
+              <span class="reveal-icon">▶</span> reveal answer
+            </button>
+            <div class="reveal-answer">cloud</div>
+          </div>
+        </div>
+
+
+        <!-- ── STEP 4: DASHBOARD LOGIN (Task 3) ─────────────────── -->
+        <div class="step">
+          <span class="step-label"><span class="step-num">04</span> / dashboard-login</span>
+          <h2>Brute-Forcing the Dashboard</h2>
+
+          <p>
+            With <code>cloud.vantage.tech</code> found, the attacker targeted the Horizon
+            login page. Filter the webserver pcap for POST requests to the auth path:
+          </p>
+
+          <pre class="terminal" data-label="wireshark">
+<span class="t-cmd">Filter: http.request.method == "POST" &amp;&amp; http.request.uri contains "auth/login"</span>
 <span class="t-out">Pkt 20822 — POST /dashboard/auth/login/  →  302 Found  (fail)</span>
 <span class="t-out">Pkt 20827 — POST /dashboard/auth/login/  →  302 Found  (fail)</span>
 <span class="t-out">Pkt 21091 — POST /dashboard/auth/login/  →  302 Found  (fail)</span>
 <span class="t-key">Pkt 21098 — POST /dashboard/auth/login/  →  200 OK     (success)</span></pre>
 
           <p>
-            Four total POST attempts. Three return a redirect back to the login page (failed
-            auth). The fourth returns 200 — the attacker is in.
+            Four total attempts. The first three redirect back to the login page (failed auth).
+            The fourth returns 200 — the attacker is in.
           </p>
 
           <div class="task-block">
@@ -139,23 +164,22 @@
         </div>
 
 
-        <!-- ── STEP 4: OPENRC DOWNLOAD (Task 4) ───────────────── -->
+        <!-- ── STEP 5: OPENRC DOWNLOAD (Task 4) ─────────────────── -->
         <div class="step">
-          <span class="step-label">
-            <span class="step-num">04</span> / openrc-download
-          </span>
-          <h2>OpenStack API Config File</h2>
+          <span class="step-label"><span class="step-num">05</span> / openrc-download</span>
+          <h2>OpenStack RC File Download</h2>
 
           <p>
-            After logging in, the attacker grabbed the OpenStack RC file — the credentials
-            bundle that lets you interact with the API from the command line. To find it: go to
-            <strong>File → Export Objects → HTTP</strong> in Wireshark, sort by size
-            descending, and look for filenames containing <code>openrc</code>. Two packets
-            show up (21256 and 21260). Packet 21260 originates from the attacker's IP
-            (<code>117.200.21.26</code>). Inspect its HTTP response headers.
+            Once inside the dashboard, the attacker grabbed the OpenStack RC file — the
+            credential bundle that enables API access from the command line. Go to
+            <strong>File → Export Objects → HTTP</strong>, sort by size descending, and
+            scroll until two entries named <code>openrc</code> appear (packets 21256 and
+            21260). Check both: one originates from the internal network, the other from the
+            attacker's IP (<code>117.200.21.26</code>). That's packet 21260.
           </p>
 
           <pre class="terminal" data-label="wireshark">
+<span class="t-out">Packet 21260 — HTTP response headers</span>
 <span class="t-out">HTTP/1.1 200 OK</span>
 <span class="t-key">Date: Tue, 01 Jul 2025 09:40:29 GMT</span>
 <span class="t-out">Content-Disposition: attachment; filename="admin-openrc.sh"</span>
@@ -171,28 +195,23 @@
         </div>
 
 
-        <!-- ── STEP 5: CONTROLLER API (Tasks 5–9) ─────────────── -->
+        <!-- ── STEP 6: CONTROLLER API (Tasks 5–7) ───────────────── -->
         <div class="step">
-          <span class="step-label">
-            <span class="step-num">05</span> / controller-pcap
-          </span>
-          <h2>API Enumeration on the Controller Node</h2>
+          <span class="step-label"><span class="step-num">06</span> / controller-pcap</span>
+          <h2>First Contact with the Controller API</h2>
 
           <p>
-            Switch to <code>controller.xxx.pcap</code>. The attacker now has an OpenStack RC
-            file and starts hitting the API directly. Filter by the attacker's source IP and HTTP:
+            Switch to <code>controller.xxx.pcap</code>. Filter by the attacker's source IP
+            and HTTP to isolate their API calls:
           </p>
 
           <pre class="terminal" data-label="wireshark">
 <span class="t-cmd">Filter: ip.src == 117.200.21.26 &amp;&amp; http</span>
 <span class="t-out">First matching packet: 8490</span>
-<span class="t-out">GET /identity HTTP/1.1</span>
-<span class="t-out">...</span>
-<span class="t-key">UTC Arrival Time: Jul 1, 2025 09:41:44.667723000 UTC</span></pre>
+<span class="t-out">GET /identity HTTP/1.1  →  134.209.71.220</span></pre>
 
           <p>
-            Expand the frame details on packet 8490 and look at the UTC Arrival Time field —
-            this is when the attacker's first API call hit the controller.
+            Expand the frame details on packet 8490 and read the UTC Arrival Time field.
           </p>
 
           <div class="task-block">
@@ -204,15 +223,16 @@
           </div>
 
           <p>
-            Next, the attacker queried Keystone to find the default project. Filter for requests
-            with <code>projects</code> in the URI and follow the HTTP stream on the relevant
-            packet:
+            The attacker then queried Keystone for the default project. Filter for
+            <code>projects</code> in the URI — six packets appear. Packets 20710 and 23129
+            relate to the default project. Follow packet 20710 as an HTTP stream to read the
+            project ID from the JSON response.
           </p>
 
           <pre class="terminal" data-label="wireshark">
 <span class="t-cmd">Filter: ip.src == 117.200.21.26 &amp;&amp; http.request.uri contains "projects"</span>
-<span class="t-out">Pkt 20710 — GET /identity/v3/projects?domain_id=default&amp;name=admin</span>
-<span class="t-out">Follow HTTP Stream...</span>
+<span class="t-out">6 packets — focus on 20710 and 23129 for the default project</span>
+<span class="t-out">Follow HTTP stream on packet 20710...</span>
 <span class="t-key">{"id": "9fb84977ff7c4a0baf0d5dbb57e235c7", "name": "admin", "domain_id": "default", ...}</span></pre>
 
           <div class="task-grid">
@@ -235,29 +255,28 @@
 
           <div class="note">
             The <code>/identity/v3/</code> path visible throughout the controller pcap is the
-            Keystone API endpoint. OpenStack's auth service is always Keystone — worth filing
-            away for any future cloud DFIR work.
+            Keystone API endpoint. Any time you see OpenStack, auth goes through Keystone —
+            worth remembering for future cloud DFIR work.
           </div>
         </div>
 
 
-        <!-- ── STEP 6: SWIFT ENUMERATION (Tasks 8–10) ─────────── -->
+        <!-- ── STEP 7: SWIFT ENUMERATION (Tasks 8–10) ───────────── -->
         <div class="step">
-          <span class="step-label">
-            <span class="step-num">06</span> / swift
-          </span>
+          <span class="step-label"><span class="step-num">07</span> / swift</span>
           <h2>Object Storage Enumeration</h2>
 
           <p>
             The attacker moved to Swift — OpenStack's object storage service (similar to S3).
-            Swift endpoint URLs follow a fixed structure:
+            Looking up the Swift endpoint structure reveals the pattern
             <code>http://&lt;ip&gt;:8080/v1/AUTH_&lt;project_id&gt;</code>. With the project ID
-            already known, the URL can be constructed and then verified in the pcap.
+            already known, we can construct the URL and confirm it in the pcap.
           </p>
 
           <pre class="terminal" data-label="wireshark">
 <span class="t-cmd">Filter: ip.dst == 134.209.71.220 &amp;&amp; http.request.uri contains "v1"</span>
-<span class="t-key">GET /v1/AUTH_9fb84977ff7c4a0baf0d5dbb57e235c7?format=json</span></pre>
+<span class="t-key">GET /v1/AUTH_9fb84977ff7c4a0baf0d5dbb57e235c7?format=json HTTP/1.1</span>
+<span class="t-out">Host: 134.209.71.220:8080</span></pre>
 
           <div class="task-block">
             <p class="task-q">Task 8 — What is the endpoint URL of the Swift service?</p>
@@ -268,13 +287,13 @@
           </div>
 
           <p>
-            Following the HTTP stream on the first <code>?format=json</code> request shows the
-            full container listing the attacker received:
+            Filter for the account listing request, then follow the HTTP stream on the first
+            matching packet to see the full container list the attacker received:
           </p>
 
           <pre class="terminal" data-label="wireshark">
 <span class="t-cmd">Filter: http.request.uri contains "/v1/AUTH_9fb84977ff7c4a0baf0d5dbb57e235c7?format=json"</span>
-<span class="t-out">Follow HTTP Stream on first packet...</span>
+<span class="t-out">Follow HTTP stream on first packet...</span>
 <span class="t-out">X-Account-Container-Count: 3</span>
 <span class="t-key">{"name": "dev-files", ...}</span>
 <span class="t-key">{"name": "employee-data", ...}</span>
@@ -289,14 +308,14 @@
           </div>
 
           <p>
-            The attacker then pulled files from those containers. Filtering for requests under
-            the <code>/v1/</code> path reveals a GET to <code>user-details.csv</code>. The
-            timestamp comes from that packet's frame details.
+            The attacker then pulled files from those containers. Filter for all requests
+            under <code>/v1/</code> and a GET to <code>user-details.csv</code> stands out at
+            packet 16398. The UTC arrival time is in the frame details.
           </p>
 
           <pre class="terminal" data-label="wireshark">
 <span class="t-cmd">Filter: ip.dst == 134.209.71.220 &amp;&amp; http.request.uri contains "/v1"</span>
-<span class="t-key">Pkt 16398 — GET .../user-data/user-details.csv</span>
+<span class="t-key">Pkt 16398 — GET .../user-data/user-details.csv HTTP/1.1</span>
 <span class="t-out">UTC Arrival Time: 2025-07-01 09:45:23</span></pre>
 
           <div class="task-block">
@@ -309,23 +328,21 @@
         </div>
 
 
-        <!-- ── STEP 7: EXFIL + COUNT (Task 11) ────────────────── -->
+        <!-- ── STEP 8: EXFIL COUNT (Task 11) ─────────────────────── -->
         <div class="step">
-          <span class="step-label">
-            <span class="step-num">07</span> / exfiltration
-          </span>
+          <span class="step-label"><span class="step-num">08</span> / exfiltration</span>
           <h2>Counting Exfiltrated Records</h2>
 
           <p>
-            Export the CSV via <strong>File → Export Objects → HTTP</strong>, filter by
-            <code>csv</code>, and save <code>user-details.csv</code>. Then count non-blank
-            lines and subtract the header row:
+            Go to <strong>File → Export Objects → HTTP</strong>, filter by <code>csv</code>,
+            and save <code>user-details.csv</code>. Count non-blank lines in the terminal and
+            subtract one for the header row:
           </p>
 
           <pre class="terminal" data-label="shell">
 <span class="t-cmd">$ sed '/^[[:space:]]*$/d' user-details.csv | wc -l</span>
 <span class="t-out">29</span>
-<span class="t-out"># 29 lines total — 1 header row = 28 user records</span></pre>
+<span class="t-out"># 29 total lines — 1 header row = 28 data records</span></pre>
 
           <div class="task-block">
             <p class="task-q">Task 11 — How many user records are in the sensitive user data file?</p>
@@ -337,27 +354,27 @@
         </div>
 
 
-        <!-- ── STEP 8: PERSISTENCE (Tasks 12–14) ──────────────── -->
+        <!-- ── STEP 9: PERSISTENCE (Tasks 12–14) ─────────────────── -->
         <div class="step">
-          <span class="step-label">
-            <span class="step-num">08</span> / persistence
-          </span>
+          <span class="step-label"><span class="step-num">09</span> / persistence</span>
           <h2>Backdoor Account Creation</h2>
 
           <p>
-            Data exfiltrated, the attacker established persistence by creating a new admin
-            user via the Keystone API. Filter the controller pcap for POST requests to the
-            users endpoint:
+            With data exfiltrated, the attacker established persistence by creating a new
+            admin user via the Keystone API. Start with a broad filter on the attacker's IP
+            and work down — <code>/identity/v3/users</code> will catch your eye:
           </p>
 
           <pre class="terminal" data-label="wireshark">
-<span class="t-cmd">Filter: http.request.uri contains "/identity/v3/users"</span>
-<span class="t-out">Pkt 20776 — POST /identity/v3/users</span>
-<span class="t-out">Follow HTTP Stream...</span>
-<span class="t-key">Request body: {"user": {"password": "P@$$word", "enabled": true,</span>
-<span class="t-key">               "default_project_id": "9fb84977ff7c4a0baf0d5dbb57e235c7",</span>
-<span class="t-key">               "name": "jellibean"}}</span>
-<span class="t-out">---</span>
+<span class="t-cmd">Filter: ip.src == 117.200.21.26</span>
+<span class="t-out">Scan through — /identity/v3/users stands out</span>
+
+<span class="t-cmd">Refine: http.request.uri contains "/identity/v3/users"</span>
+<span class="t-out">Several packets with JSON bodies; packet 20839 shows 201 Created</span>
+<span class="t-out">Follow HTTP stream on packet 20776 (contains the POST body)...</span>
+<span class="t-key">{"user": {"password": "P@$$word", "enabled": true,</span>
+<span class="t-key">          "default_project_id": "9fb84977ff7c4a0baf0d5dbb57e235c7",</span>
+<span class="t-key">          "name": "jellibean"}}</span>
 <span class="t-flag">HTTP/1.1 201 CREATED</span>
 <span class="t-out">{"user": {"id": "c373da67a62b48f393c45dc071fa80b8", "name": "jellibean", ...}}</span></pre>
 
@@ -380,14 +397,14 @@
           </div>
 
           <p>
-            The attacker then assigned an admin role to the new account via a PUT request,
-            confirming this was a persistence technique — not just a test account. The
-            MITRE mapping is straightforward: creating a new account in a cloud environment
-            to maintain access maps directly to a specific sub-technique under Create Account.
+            The attacker then assigned an admin role to the new account via a PUT request —
+            confirming this was a persistence move, not a test account. Looking at MITRE
+            ATT&amp;CK, creating a new account in a cloud tenant maps to T1136 with
+            sub-technique .003.
           </p>
 
           <pre class="terminal" data-label="wireshark">
-<span class="t-out">PUT /identity/v3/projects/9fb84977ff7c4a0baf0d5dbb57e235c7/users/c373da67.../roles/...</span>
+<span class="t-out">PUT /identity/v3/projects/9fb84977.../users/c373da67.../roles/...</span>
 <span class="t-flag">HTTP/1.1 204 NO CONTENT  ← role assignment confirmed</span></pre>
 
           <div class="task-block">
@@ -400,25 +417,26 @@
         </div>
 
 
-        <!-- ── TAKEAWAY ────────────────────────────────────────── -->
+        <!-- ── TAKEAWAY ────────────────────────────────────────────── -->
         <div class="step">
           <span class="step-label">Takeaway</span>
           <h2>Key Takeaway</h2>
 
           <p>
-            The full attack chain here is a textbook cloud intrusion: fuzz → find subdomain →
-            brute-force login → steal the API credential file → enumerate cloud resources →
-            exfiltrate data → create a backdoor account. Every step left artifacts in the pcap
-            that could be recovered purely from packet data, without host-level logs.
+            The full attack chain is a textbook cloud intrusion: fuzz → find subdomain →
+            brute-force login → steal the API credential file → enumerate cloud storage →
+            exfiltrate data → create a backdoor account. Every step left artifacts recoverable
+            purely from packet data, no host-level logs required.
           </p>
 
           <div class="info-box">
             <strong>Methodology note</strong>
-            In cloud DFIR, the OpenStack RC file download is a critical pivot point — whoever
-            has that file has API-level access to the entire tenant. Monitoring downloads of
-            <code>*-openrc.sh</code> or equivalent credential bundles should be a detection
-            priority. The persistence move (T1136.003) also happened fast: only ~7 minutes
-            elapsed between the RC file download (09:40) and the backdoor account creation (09:48).
+            The OpenStack RC file download is the critical pivot point in this chain — whoever
+            has that file has API-level access to the entire tenant. Monitoring for downloads
+            of <code>*-openrc.sh</code> files (or equivalent credential bundles in other cloud
+            platforms) should be a detection priority. The persistence move (T1136.003) also
+            happened fast: only ~7 minutes elapsed between the RC file download (09:40) and
+            the backdoor account creation (09:48).
           </div>
         </div>
 
