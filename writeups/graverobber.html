@@ -154,7 +154,6 @@ while True:
         p.close()
 
     if 'wrong turning' not in out:
-        print(out)
         break
 
     stats = [line for line in out.split("\n") if "newfstatat" in line]
