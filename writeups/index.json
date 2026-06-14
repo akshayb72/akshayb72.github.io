@@ -1,4 +1,11 @@
 [
+   {
+  "title":       "Find The Easy Pass",
+  "file":        "findtheeasypass.html",
+  "description": "A binary that reveals the password in memory. The password was recovered using a debugger.",
+  "tags":        ["rev","htb","easy"],
+  "date":        "Jun 2026"
+},
   {
   "title":       "Vantage",
   "file":        "vantage.html",
