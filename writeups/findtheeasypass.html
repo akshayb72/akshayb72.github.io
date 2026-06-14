@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Find The Easy Pass — akshayb72</title>
+  <meta name="description" content="HTB Find The Easy Pass writeup — cracking a 32-bit Windows crackme with x32dbg by catching the password comparison at runtime.">
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/writeup.css">
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="../index.html" class="nav-logo">akshayb72</a>
+      <div class="nav-links">
+        <a href="../index.html">Home</a>
+        <a href="../writeups.html">Writeups</a>
+        <button id="theme-toggle" aria-label="Toggle theme">◑</button>
+      </div>
+    </div>
+  </nav>
+
+
+  <main class="page-body">
+    <div class="layout">
+
+      <!-- ── WRITEUP HEADER ────────────────────── -->
+      <header class="writeup-header">
+        <div class="breadcrumb">
+          <a href="../index.html">akshayb72</a>
+          <span>/</span>
+          <a href="../writeups.html">writeups</a>
+          <span>/</span>
+          Find The Easy Pass
+        </div>
+
+        <h1>Find The Easy Pass</h1>
+
+        <div class="writeup-meta">
+          <span class="tag tag--htb">HTB</span>
+          <span class="tag tag--rev">Reverse Engineering</span>
+          <span class="tag">Challenges</span>
+          <span class="tag">Very Easy</span>
+          <span class="tag"><a href="https://app.hackthebox.com/challenges/find-the-easy-pass">Find The Easy Pass</a></span>
+          <span class="writeup-date">June 2026</span>
+        </div>
+      </header>
+
+
+      <!-- ── WRITEUP BODY ──────────────────────── -->
+      <article class="writeup-body">
+
+
+        <!-- ── STEP 1 ── -->
+        <div class="step">
+          <span class="step-label"><span class="step-num">01</span> / execute</span>
+          <h2>Initial Execution</h2>
+
+          <p>
+            The challenge zip contains a Windows PE (portable executable). Run it with
+            Wine on Linux or inside a Windows VM. A small GUI dialog appears asking for
+            a password. Type anything wrong and it shows an "Easypass — Wrong Password!"
+            message box and exits.
+          </p>
+
+          <div class="info-box">
+            <strong>Setup note</strong>
+            If you're on Linux, <code>wine EasyPass.exe</code> works fine. On Windows, just
+            double-click. Either way, keep the program open alongside your debugger — you'll
+            need to attach to the running process later.
+          </div>
+        </div>
+
+
+        <!-- ── STEP 2 ── -->
+        <div class="step">
+          <span class="step-label"><span class="step-num">02</span> / recon</span>
+          <h2>Static Recon — strings</h2>
+
+          <p>
+            Before reaching for a debugger, try the cheapest tool first:
+            <code>strings</code>. It dumps all printable text sequences from the binary.
+            On SpookyPass-style challenges this immediately reveals a hardcoded
+            password — but not here.
+          </p>
+
+          <pre class="terminal" data-label="cmd">
+<span class="t-cmd">C:\> strings EasyPass.exe</span>
+<span class="t-out">This program must be run under Win32
+CODE
+`DATA
+.idata
+.tls
+.rdata
+Boolean  False  True  Char  Integer  Byte
+Word  Cardinal  String  TObject  TObject
+System  IInterface  System  TInterfacedObject
+uYhD  YZ^[</span></pre>
+
+          <p>
+            The output is mostly Delphi/Pascal runtime internals — no password string in
+            sight. The presence of Delphi type names (<code>TObject</code>, <code>TInterfacedObject</code>)
+            tells us the binary was compiled with Delphi or Free Pascal. Delphi encodes
+            strings differently from C, which is why <code>strings</code> misses them.
+            Time to use a debugger.
+          </p>
+
+          <div class="info-box">
+            <strong>Why strings failed</strong>
+            Delphi stores short strings with a length-prefix byte rather than a null
+            terminator. The <code>strings</code> tool looks for runs of printable ASCII
+            ending in <code>\0</code>, so length-prefixed strings are invisible to it.
+          </div>
+        </div>
+
+
+        <!-- ── STEP 3 ── -->
+        <div class="step">
+          <span class="step-label"><span class="step-num">03</span> / debug</span>
+          <h2>Dynamic Analysis — x32dbg</h2>
+
+          <p>
+            The binary is 32-bit (the <code>Win32</code> string in the PE header confirms it),
+            so open it in <strong>x32dbg</strong>. x32dbg is a free, open-source Windows
+            debugger purpose-built for 32-bit reversing. Load the file via
+            <em>File → Open</em>.
+          </p>
+
+          <div class="info-box">
+            <strong>Why x32dbg?</strong>
+            Use x32dbg for 32-bit PE files and x64dbg for 64-bit. They look identical
+            but the pointer width differs. Loading a 32-bit binary in the 64-bit variant
+            will still work, but x32dbg gives cleaner register views for 32-bit code.
+          </div>
+
+          <p>
+            Once loaded, right-click anywhere in the disassembly pane and navigate to
+            <strong>Search for → All Modules → String references</strong>. In the
+            search bar type <code>Wrong Password!</code> — the exact text from the
+            dialog box.
+          </p>
+
+          <pre class="terminal" data-label="x32dbg strings">
+<span class="t-out">Address      Disassembly                    String</span>
+<span class="t-key">00454144     mov eax, easypass.454200       "Wrong Password!"</span></pre>
+
+          <p>
+            Only one result appears. Double-click it. x32dbg jumps to that address in
+            the disassembly and you can see the surrounding code: a conditional jump
+            leads either to the "Wrong Password!" path or to a "Good Job. Congratulations"
+            success path.
+          </p>
+        </div>
+
+
+        <!-- ── STEP 4 ── -->
+        <div class="step">
+          <span class="step-label"><span class="step-num">04</span> / breakpoint</span>
+          <h2>Setting Breakpoints &amp; Catching the Comparison</h2>
+
+          <p>
+            Scroll up a little from the "Wrong Password!" address. You'll see a
+            <code>call</code> instruction a few lines above the conditional jump — that's
+            the string-comparison function. There are also two <code>mov</code> instructions
+            that load values into <code>EAX</code> and <code>EDX</code> just before the call.
+            Set a breakpoint on that <code>call</code> line by pressing <strong>F2</strong>
+            (the line turns red).
+          </p>
+
+          <p>
+            Now press <strong>F9</strong> (Run). The program's GUI appears. Type any dummy
+            password (e.g. <code>1234</code>) and click "Check Password". The debugger
+            immediately breaks at your breakpoint. Look at the registers panel on the
+            right side:
+          </p>
+
+          <pre class="terminal" data-label="x32dbg registers">
+<span class="t-out">EAX   02011D34   <span class="t-inp">"1234"</span>       ← your input</span>
+<span class="t-key">EDX   02013994   "fortran!"   ← the correct password</span>
+<span class="t-out">EBX   02011E44
+EBP   0019F2FC
+...</span></pre>
+
+          <p>
+            The comparison function takes two arguments: <code>EAX</code> (user input)
+            and <code>EDX</code> (expected password). EDX contains the plaintext password
+            sitting in memory — we didn't even need to patch the binary.
+          </p>
+
+          <div class="task-block">
+            <p class="task-q">What is the correct password?</p>
+            <button class="reveal-btn" onclick="toggleReveal(this)">
+              <span class="reveal-icon">▶</span> reveal answer
+            </button>
+            <div class="reveal-answer">fortran!</div>
+          </div>
+        </div>
+
+
+        <!-- ── STEP 5 ── -->
+        <div class="step">
+          <span class="step-label"><span class="step-num">05</span> / flag</span>
+          <h2>Submitting the Password</h2>
+
+          <p>
+            Press <strong>F9</strong> again to let the program continue running, or
+            restart it fresh. Type the recovered password into the "Enter Password"
+            field and click "Check Password".
+          </p>
+
+          <pre class="terminal" data-label="EasyPass.exe">
+<span class="t-out">[ Enter Password: ]</span> <span class="t-inp">fortran!</span>
+<span class="t-flag">Good Job. Congratulations</span></pre>
+
+          <div class="task-block">
+            <p class="task-q">Flag</p>
+            <button class="reveal-btn" onclick="toggleReveal(this)">
+              <span class="reveal-icon">▶</span> reveal flag
+            </button>
+            <div class="reveal-answer">HTB{fortran!}</div>
+          </div>
+
+          <div class="result-box">
+            <span class="result-icon">✓</span>
+            <p>
+              Flag captured.
+              <span>Password comparison passed — success branch taken.</span>
+            </p>
+          </div>
+        </div>
+
+
+        <!-- ── TAKEAWAY ── -->
+        <div class="step">
+          <span class="step-label">Takeaway</span>
+          <h2>Key Takeaway</h2>
+
+          <p>
+            When <code>strings</code> returns nothing useful, check the compiler. Delphi,
+            VB6, and .NET all have string encodings that bypass the standard tool.
+            Dynamic analysis is the next move: set a breakpoint near the failure message,
+            run to it, and inspect the registers — the plaintext password is almost always
+            sitting in a register right before the comparison call.
+          </p>
+
+          <div class="info-box">
+            <strong>Escalation order for GUI crackmes</strong>
+            <code>file</code> → <code>strings</code> → identify compiler/runtime →
+            load in debugger → find error string → set breakpoint on comparison →
+            run and inspect registers → patch or reuse recovered value
+          </div>
+        </div>
+
+
+      </article>
+
+
+      <nav class="writeup-nav" aria-label="Writeup navigation">
+        <a href="spookypass.html" class="writeup-nav-link prev">
+          <span>← Previous</span>
+          SpookyPass
+        </a>
+        <span></span>
+      </nav>
+
+
+    </div>
+  </main>
+
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <a href="../writeups.html">← All Writeups</a>
+      <span>akshayb72.github.io</span>
+    </div>
+  </footer>
+
+
+  <script src="../js/main.js"></script>
+  <script>
+    function toggleReveal(btn) {
+      const answer = btn.nextElementSibling;
+      const isOpen = answer.classList.contains('visible');
+      answer.classList.toggle('visible', !isOpen);
+      btn.classList.toggle('open', !isOpen);
+      btn.querySelector('.reveal-icon').textContent = isOpen ? '▶' : '▼';
+      btn.childNodes[2].textContent = isOpen ? ' reveal answer' : ' hide answer';
+    }
+  </script>
+</body>
+</html>
