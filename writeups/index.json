@@ -1,6 +1,6 @@
 [
    {
-  "title":       "Find The Easy Pass",
+  "title":       "Find_The_Easy_Pass",
   "file":        "findtheeasypass.html",
   "description": "A binary that reveals the password in memory. The password was recovered using a debugger.",
   "tags":        ["rev","htb","easy"],
